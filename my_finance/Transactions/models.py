@@ -1,8 +1,8 @@
 from django.db import models
+from django.db.models import ForeignKey
 
-import Account
-import Category
-
+from Accounts.models import Account
+from Category.models import Category
 
 # Create your models here.
 
@@ -19,8 +19,8 @@ class Transaction(models.Model):
         OUTCOME : 'Outcome'
     }
     kind = models.CharField(max_length=7 , default=INCOME, choices=TRANS_KIND),
-    account = models.ForeignKey(Account, on_delete=models.CASCADE)
-    category = models.ForeignKey(Category, on_delete=models.CASCADE)
+    account = ForeignKey(Account, on_delete=models.CASCADE)
+    category = ForeignKey(Category, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.symbol
