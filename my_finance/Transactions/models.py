@@ -8,7 +8,7 @@ from Category.models import Category
 
 
 class Transaction(models.Model):
-    id = models.IntegerField()
+    id = models.AutoField(primary_key=True)
     date = models.DateField()
     amount = models.FloatField()
     desc = models.CharField(max_length=200)
@@ -18,9 +18,9 @@ class Transaction(models.Model):
         INCOME : 'Income',
         OUTCOME : 'Outcome'
     }
-    kind = models.CharField(max_length=7 , default=INCOME, choices=TRANS_KIND),
+    kind = models.CharField(max_length=7 , default=INCOME, choices=TRANS_KIND)
     account = ForeignKey(Account, on_delete=models.CASCADE)
     category = ForeignKey(Category, on_delete=models.CASCADE)
 
     def __str__(self):
-        return self.symbol
+        return self.desc
