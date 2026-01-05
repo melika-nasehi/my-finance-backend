@@ -8,15 +8,69 @@ from django.utils.timezone import now
 from datetime import timedelta
 from django.db.models.functions import TruncDay
 from django.utils import timezone
-from datetime import timedelta
 from django.db.models import Sum, Q
+from collections import defaultdict
+import calendar
+from datetime import timedelta, date
+
+
+def get_date_range(period):
+    today = timezone.now().date()
+
+    days_since_saturday = (today.weekday() + 2) % 7
+    start_of_current_week = today - timedelta(days=days_since_saturday)
+
+    if period == 'current-week':
+        return start_of_current_week, today
+
+    elif period == 'last-week':
+        end_of_last_week = start_of_current_week - timedelta(days=1)
+        start_of_last_week = end_of_last_week - timedelta(days=6)
+        return start_of_last_week, end_of_last_week
+
+    elif period == 'current-month' or period == 'per-day':
+        return today.replace(day=1), today
+
+    elif period == 'last-month':
+        last_month_end = today.replace(day=1) - timedelta(days=1)
+        return last_month_end.replace(day=1), last_month_end
+
+    elif period == 'today':
+        return today, today
+
+    elif period == 'yesterday':
+        yesterday = today - timedelta(days=1)
+        return yesterday, yesterday
+
+    elif period == 'year-to-date':
+        return today.replace(month=1, day=1), today
+
+    elif period == 'last-year':
+        last_year = today.year - 1
+        return date(last_year, 1, 1), date(last_year, 12, 31)
+
+    elif period == 'all-time':
+        first_transaction = Transaction.objects.order_by('date').first()
+        if first_transaction:
+            start_date = first_transaction.date
+        else:
+            start_date = today  # اگر تراکنشی نبود، همان امروز
+        return start_date, today
+    return start_of_current_week, today
 
 
 class CategoryExpensesChart(APIView):
+
     def get(self, request):
+        period = request.GET.get('period', 'current-month')
+        start, end = get_date_range(period)
+
+        queryset = Transaction.objects.filter(kind='outcome')
+        if start and end:
+            queryset = queryset.filter(date__range=[start, end])
+
         stats = (
-            Transaction.objects.filter(kind='outcome')
-            .values('category__name', 'category__color')
+            queryset.values('category__name', 'category__color')  # استفاده از queryset به جای Transaction.objects
             .annotate(total_amount=Sum('amount'))
             .order_by('-total_amount')
         )
@@ -30,74 +84,110 @@ class CategoryExpensesChart(APIView):
 
 class DailyExpensesChart(APIView):
     def get(self, request):
-        today = timezone.now().date()
+        period = request.GET.get('period', 'current-week')  # پیش‌فرض هفته جاری
+        start, end = get_date_range(period)
 
-        days_since_saturday = (today.weekday() + 2) % 7
-        start_of_week = today - timedelta(days=days_since_saturday)
+        if period in ['current-month', 'last-month']:
+            stats = Transaction.objects.filter(kind='outcome', date__range=[start, end]) \
+                .values('category__name').annotate(total=Sum('amount')).order_by('-total')
+            return Response({
+                'categories': [item['category__name'] or "Other" for item in stats],
+                'data': [float(item['total']) for item in stats]
+            })
 
-        labels = []
-        values = []
+        elif period == 'per-day':
+            _, num_days = calendar.monthrange(start.year, start.month)
+            labels = [str(day) for day in range(1, num_days + 1)]
+            values = []
+            for day in range(1, num_days + 1):
+                curr_date = start.replace(day=day)
+                total = Transaction.objects.filter(kind='outcome', date=curr_date).aggregate(Sum('amount'))[
+                            'amount__sum'] or 0
+                values.append(float(total))
+            return Response({'categories': labels, 'data': values})
 
-        for i in range(7):
-            current_date = start_of_week + timedelta(days=i)
-            labels.append(current_date.strftime('%a'))  # نام روز
 
-            if current_date <= today:
+        elif period in ['today', 'yesterday', 'current-month', 'last-month']:
+            stats = Transaction.objects.filter(kind='outcome', date__range=[start, end]) \
+                .values('category__name').annotate(total=Sum('amount')).order_by('-total')
+            return Response({
+                'categories': [item['category__name'] or "Other" for item in stats],
+                'data': [float(item['total']) for item in stats]
+            })
+
+        elif period in ['year-to-date', 'last-year']:
+            labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+            values = []
+            for month in range(1, 12 + 1):
                 total = Transaction.objects.filter(
                     kind='outcome',
-                    date=current_date
+                    date__year=start.year,
+                    date__month=month
                 ).aggregate(Sum('amount'))['amount__sum'] or 0
                 values.append(float(total))
-            else:
-                values.append(0)
+            return Response({'categories': labels, 'data': values})
 
-        return Response({
-            'categories': labels,
-            'data': values
-        })
+        elif period == 'all-time':
+            stats = Transaction.objects.filter(kind='outcome') \
+                .values('date__year') \
+                .annotate(total=Sum('amount')) \
+                .order_by('date__year')
 
+            return Response({
+                'categories': [str(item['date__year']) for item in stats],
+                'data': [float(item['total']) for item in stats]
+            })
 
-from collections import defaultdict
+        else:
+            labels, values = [], []
+            for i in range(7):
+                curr_date = start + timedelta(days=i)
+                labels.append(curr_date.strftime('%a'))
+                total = Transaction.objects.filter(kind='outcome', date=curr_date).aggregate(Sum('amount'))[
+                            'amount__sum'] or 0
+                values.append(float(total))
+            return Response({'categories': labels, 'data': values})
 
 
 class GroupedTransactionsView(APIView):
     def get(self, request):
-        # ۱. گرفتن تمام تراکنش‌ها به همراه اطلاعات دسته و حساب
-        transactions = Transaction.objects.all().select_related('category', 'account').order_by('-date')
+        period = request.GET.get('period', 'current-month')
+        is_per_day = (period == 'per-day')
 
-        # ۲. ساختن یک دیکشنری برای گروه‌بندی دستی
+        start, end = get_date_range(period)
+        queryset = Transaction.objects.filter(date__range=[start, end]).select_related('category', 'account').order_by(
+            '-date')
+
         grouped_data = defaultdict(lambda: {'total_expense': 0, 'total_deposit': 0, 'items': []})
 
-        for t in transactions:
-            cat_name = t.category.name if t.category else "Other"
+        for t in queryset:
+            group_key = t.date.strftime('%Y-%m-%d') if is_per_day else (t.category.name if t.category else "Other")
 
-            # اضافه کردن دیتای خام به لیست آیتم‌ها برای نمایش در آکاردئون
-            grouped_data[cat_name]['items'].append({
-                'desc': t.desc,  # نام فیلد در مدل تو desc بود
+            grouped_data[group_key]['items'].append({
+                'desc': t.desc,
                 'account': t.account.name if t.account else 'N/A',
                 'date': t.date.strftime('%Y-%m-%d'),
                 'amount': float(t.amount),
                 'kind': t.kind
             })
 
-            # محاسبه مجموع برای هدر آکاردئون
             if t.kind == 'outcome':
-                grouped_data[cat_name]['total_expense'] += float(t.amount)
+                grouped_data[group_key]['total_expense'] += float(t.amount)
             else:
-                grouped_data[cat_name]['total_deposit'] += float(t.amount)
+                grouped_data[group_key]['total_deposit'] += float(t.amount)
 
-        # ۳. تبدیل دیکشنری به لیستی که آنگولار می‌فهمه
         final_groups = []
-        for name, data in grouped_data.items():
+        sorted_keys = sorted(grouped_data.keys(), reverse=True) if is_per_day else grouped_data.keys()
+
+        for key in sorted_keys:
             final_groups.append({
-                'category__name': name,
-                'total_expense': data['total_expense'],
-                'total_deposit': data['total_deposit'],
-                'items': data['items']  # این همون فیلد گمشده بود!
+                'category__name': key,
+                'total_expense': grouped_data[key]['total_expense'],
+                'total_deposit': grouped_data[key]['total_deposit'],
+                'items': grouped_data[key]['items']
             })
 
-        # ۴. محاسبه مجموع کل برای فوتر (اختیاری)
-        grand_totals = Transaction.objects.aggregate(
+        grand_totals = queryset.aggregate(
             total_expense=Sum('amount', filter=Q(kind='outcome')),
             total_deposit=Sum('amount', filter=Q(kind='income'))
         )
