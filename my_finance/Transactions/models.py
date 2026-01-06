@@ -13,12 +13,12 @@ class Transaction(models.Model):
     amount = models.FloatField()
     desc = models.CharField(max_length=200)
     INCOME = "income"
-    OUTCOME = "outcome"
+    EXPENSE = "expense"
     TRANS_KIND ={
         INCOME : 'Income',
-        OUTCOME : 'Outcome'
+        EXPENSE : 'Expense'
     }
-    kind = models.CharField(max_length=7 , default=INCOME, choices=TRANS_KIND)
+    kind = models.CharField(max_length=7 , default=EXPENSE, choices=TRANS_KIND)
     account = ForeignKey(Account, on_delete=models.CASCADE)
     category = ForeignKey(Category, on_delete=models.CASCADE)
 

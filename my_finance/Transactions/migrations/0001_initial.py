@@ -21,7 +21,7 @@ class Migration(migrations.Migration):
                 ('date', models.DateField()),
                 ('amount', models.FloatField()),
                 ('desc', models.CharField(max_length=200)),
-                ('kind', models.CharField(choices=[('income', 'Income'), ('outcome', 'Outcome')], default='income', max_length=7)),
+                ('kind', models.CharField(choices=[('income', 'Income'), ('expense', 'Expense')], default='income', max_length=7)),
                 ('account', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='Accounts.account')),
                 ('category', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='Category.category')),
             ],

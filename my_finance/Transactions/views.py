@@ -63,14 +63,18 @@ class CategoryExpensesChart(APIView):
 
     def get(self, request):
         period = request.GET.get('period', 'current-month')
+        category_name = request.GET.get('category', None)
         start, end = get_date_range(period)
 
-        queryset = Transaction.objects.filter(kind='outcome')
+        queryset = Transaction.objects.filter(kind='expense')
         if start and end:
             queryset = queryset.filter(date__range=[start, end])
 
+        if category_name:
+            queryset = queryset.filter(category__name=category_name)
+
         stats = (
-            queryset.values('category__name', 'category__color')  # استفاده از queryset به جای Transaction.objects
+            queryset.values('category__name', 'category__color')
             .annotate(total_amount=Sum('amount'))
             .order_by('-total_amount')
         )
@@ -79,48 +83,43 @@ class CategoryExpensesChart(APIView):
             'series': [float(item['total_amount']) for item in stats],
             'colors': [item['category__color'] for item in stats] # ارسال لیست رنگ‌ها
         }
+
+        if not stats.exists():
+            return Response({'labels': [], 'series': [], 'colors': []})
+
         return Response(data)
 
 
 class DailyExpensesChart(APIView):
     def get(self, request):
-        period = request.GET.get('period', 'current-week')  # پیش‌فرض هفته جاری
+        period = request.GET.get('period', 'current-week')
+        category_name = request.GET.get('category', None)
         start, end = get_date_range(period)
 
-        if period in ['current-month', 'last-month']:
-            stats = Transaction.objects.filter(kind='outcome', date__range=[start, end]) \
-                .values('category__name').annotate(total=Sum('amount')).order_by('-total')
-            return Response({
-                'categories': [item['category__name'] or "Other" for item in stats],
-                'data': [float(item['total']) for item in stats]
-            })
+        base_filter = Q(kind='expense')
+        if start and end:
+            base_filter &= Q(date__range=[start, end])
 
-        elif period == 'per-day':
+        if category_name:
+            base_filter &= Q(category__name=category_name)
+
+        if period == 'per-day':
             _, num_days = calendar.monthrange(start.year, start.month)
             labels = [str(day) for day in range(1, num_days + 1)]
             values = []
             for day in range(1, num_days + 1):
                 curr_date = start.replace(day=day)
-                total = Transaction.objects.filter(kind='outcome', date=curr_date).aggregate(Sum('amount'))[
+                total = Transaction.objects.filter(base_filter, date=curr_date).aggregate(Sum('amount'))[
                             'amount__sum'] or 0
                 values.append(float(total))
             return Response({'categories': labels, 'data': values})
 
-
-        elif period in ['today', 'yesterday', 'current-month', 'last-month']:
-            stats = Transaction.objects.filter(kind='outcome', date__range=[start, end]) \
-                .values('category__name').annotate(total=Sum('amount')).order_by('-total')
-            return Response({
-                'categories': [item['category__name'] or "Other" for item in stats],
-                'data': [float(item['total']) for item in stats]
-            })
-
         elif period in ['year-to-date', 'last-year']:
             labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
             values = []
-            for month in range(1, 12 + 1):
+            for month in range(1, 13):
                 total = Transaction.objects.filter(
-                    kind='outcome',
+                    base_filter,
                     date__year=start.year,
                     date__month=month
                 ).aggregate(Sum('amount'))['amount__sum'] or 0
@@ -128,35 +127,49 @@ class DailyExpensesChart(APIView):
             return Response({'categories': labels, 'data': values})
 
         elif period == 'all-time':
-            stats = Transaction.objects.filter(kind='outcome') \
+            all_time_filter = Q(kind='expense')
+            if category_name:
+                all_time_filter &= Q(category__name=category_name)
+
+            stats = Transaction.objects.filter(all_time_filter) \
                 .values('date__year') \
                 .annotate(total=Sum('amount')) \
                 .order_by('date__year')
 
             return Response({
-                'categories': [str(item['date__year']) for item in stats],
-                'data': [float(item['total']) for item in stats]
+                'categories': [str(item['date__year']) for item in stats] or ["No Data"],
+                'data': [float(item['total']) for item in stats] or [0]
             })
 
         else:
             labels, values = [], []
-            for i in range(7):
+            num_days = (end - start).days + 1
+            if num_days > 31: num_days = 7
+
+            for i in range(num_days):
                 curr_date = start + timedelta(days=i)
                 labels.append(curr_date.strftime('%a'))
-                total = Transaction.objects.filter(kind='outcome', date=curr_date).aggregate(Sum('amount'))[
+                total = Transaction.objects.filter(base_filter, date=curr_date).aggregate(Sum('amount'))[
                             'amount__sum'] or 0
                 values.append(float(total))
+
             return Response({'categories': labels, 'data': values})
 
 
 class GroupedTransactionsView(APIView):
     def get(self, request):
         period = request.GET.get('period', 'current-month')
+        category_name = request.GET.get('category', None)
         is_per_day = (period == 'per-day')
 
         start, end = get_date_range(period)
-        queryset = Transaction.objects.filter(date__range=[start, end]).select_related('category', 'account').order_by(
-            '-date')
+        queryset = Transaction.objects.filter(
+            date__range=[start, end]).select_related('category', 'account')
+
+        if category_name:
+            queryset = queryset.filter(category__name=category_name)
+
+        queryset = queryset.order_by('-date')
 
         grouped_data = defaultdict(lambda: {'total_expense': 0, 'total_deposit': 0, 'items': []})
 
@@ -171,7 +184,7 @@ class GroupedTransactionsView(APIView):
                 'kind': t.kind
             })
 
-            if t.kind == 'outcome':
+            if t.kind == 'expense':
                 grouped_data[group_key]['total_expense'] += float(t.amount)
             else:
                 grouped_data[group_key]['total_deposit'] += float(t.amount)
@@ -188,7 +201,7 @@ class GroupedTransactionsView(APIView):
             })
 
         grand_totals = queryset.aggregate(
-            total_expense=Sum('amount', filter=Q(kind='outcome')),
+            total_expense=Sum('amount', filter=Q(kind='expense')),
             total_deposit=Sum('amount', filter=Q(kind='income'))
         )
 

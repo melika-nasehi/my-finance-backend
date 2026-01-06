@@ -20,7 +20,7 @@ def get_budget_status(request):
     for b in budgets:
         spent = Transaction.objects.filter(
             category=b.category,
-            kind='outcome',
+            kind='expense',
             date__month=month,
             date__year=year
         ).aggregate(total=Sum('amount'))['total'] or 0

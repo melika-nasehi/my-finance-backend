@@ -1,10 +1,6 @@
-from django.urls import path, include
-from rest_framework.routers import DefaultRouter
-from .views import AccountViewSet
-
-router = DefaultRouter()
-router.register(r'', AccountViewSet, basename='account')
+from django.urls import path
+from .views import AccountSummaryView
 
 urlpatterns = [
-    path('', include(router.urls)),
+    path('summary/', AccountSummaryView.as_view(), name='account-summary'),
 ]
