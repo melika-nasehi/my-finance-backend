@@ -7,11 +7,16 @@ from django.db.models import Sum, Q
 from datetime import datetime, timedelta
 
 
+
+class AccountListView(APIView):
+    def get(self, request):
+        accounts = Account.objects.filter(owner=request.user).values('id', 'name', 'is_debt')
+        return Response(list(accounts))
+
+
 class AccountSummaryView(APIView):
     def get(self, request):
         accounts = Account.objects.filter(owner=request.user)
-
-        # تفکیک دارایی‌ها و بدهی‌ها
         assets = accounts.filter(is_debt=False)
         liabilities = accounts.filter(is_debt=True)
 
@@ -19,8 +24,6 @@ class AccountSummaryView(APIView):
         total_liabilities = liabilities.aggregate(Sum('balance'))['balance__sum'] or 0
         net_worth = total_assets - total_liabilities
 
-        # --- بخش نمودار واقعی ---
-        # ۱. ایجاد ۷ نقطه زمانی (مثلاً ۷ روز گذشته)
         today = datetime.now().date()
         dates = [(today - timedelta(days=i)) for i in range(6, -1, -1)]
         dates_str = [d.strftime('%b %d') for d in dates]
@@ -31,8 +34,6 @@ class AccountSummaryView(APIView):
             current_balance = float(acc.balance)
 
             for d in dates:
-                # محاسبه مجموع تراکنش‌های بعد از تاریخ d برای بازگشت به عقب
-                # موجودی در تاریخ d = موجودی فعلی - (درآمدهای بعد از d) + (هزینه‌های بعد از d)
                 future_trans = Transaction.objects.filter(account=acc, date__gt=d).aggregate(
                     inc=Sum('amount', filter=Q(kind='income')),
                     exp=Sum('amount', filter=Q(kind='expense'))
