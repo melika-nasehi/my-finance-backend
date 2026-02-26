@@ -5,13 +5,30 @@ from Transactions.models import Transaction
 from .serializers import AccountSerializer
 from django.db.models import Sum, Q
 from datetime import datetime, timedelta
-
+from django.shortcuts import get_object_or_404
 
 
 class AccountListView(APIView):
     def get(self, request):
         accounts = Account.objects.filter(owner=request.user).values('id', 'name', 'is_debt')
         return Response(list(accounts))
+
+    def post(self, request):
+        data = request.data
+        new_account = Account.objects.create(
+            owner=request.user,
+            name=data.get('name'),
+            balance=data.get('balance', 0),
+            color=data.get('color', '#3b82f6'),
+            is_debt=data.get('is_debt', False),
+            type=data.get('type', 'account')
+        )
+        return Response({"message": "Account created!"}, status=201)
+
+    def delete(self, request, pk):
+        account = get_object_or_404(Account, pk=pk, owner=request.user)
+        account.delete()
+        return Response({"message": "Account deleted successfully"}, status=204)
 
 
 class AccountSummaryView(APIView):
@@ -24,8 +41,24 @@ class AccountSummaryView(APIView):
         total_liabilities = liabilities.aggregate(Sum('balance'))['balance__sum'] or 0
         net_worth = total_assets - total_liabilities
 
+        period = request.query_params.get('period', '1m')
+
+        if period == '2w':
+            num_days, step = 14, 1
+        elif period == '3m':
+            num_days, step = 90, 7
+        elif period == '1y':
+            num_days, step = 365, 30
+        elif period == 'all':
+            num_days, step = 1000, 30
+        else:  # default 1m
+            num_days, step = 30, 1
+
         today = datetime.now().date()
-        dates = [(today - timedelta(days=i)) for i in range(6, -1, -1)]
+
+        dates = [(today - timedelta(days=i)) for i in range(0, num_days, step)]
+        dates.reverse()
+
         dates_str = [d.strftime('%b %d') for d in dates]
 
         chart_series = []

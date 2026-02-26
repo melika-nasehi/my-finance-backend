@@ -12,4 +12,5 @@ urlpatterns = [
     path('category-expenses/', CategoryExpensesChart.as_view()),
     path('daily-expenses/', DailyExpensesChart.as_view(), name='daily-expenses'),
     path('grouped/', GroupedTransactionsView.as_view(), name='grouped-transactions'),
+    path('latest/', LatestTransactionsView.as_view(), name='latest-transactions'),
 ]

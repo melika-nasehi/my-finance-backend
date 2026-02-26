@@ -214,3 +214,20 @@ class GroupedTransactionsView(APIView):
 class TransactionViewSet(viewsets.ModelViewSet):
     queryset = Transaction.objects.all()
     serializer_class = TransactionSerializer
+
+
+class LatestTransactionsView(APIView):
+    def get(self, request):
+        transactions = Transaction.objects.filter(account__owner=request.user).order_by('-date')[:7]
+        data = []
+        for t in transactions:
+            data.append({
+                'id': t.id,
+                'description': t.description,
+                'amount': float(t.amount),
+                'date': t.date,
+                'kind': t.kind,
+                'category_name': t.category.name if t.category else "Uncategorized",
+                'account_name': t.account.name
+            })
+        return Response(data)

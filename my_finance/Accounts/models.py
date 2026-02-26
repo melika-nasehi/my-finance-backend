@@ -12,6 +12,7 @@ class Account(models.Model):
     is_debt = models.BooleanField(default=False)
     color = models.CharField(max_length=7, default='#3b82f6')
 
+
     ACCOUNT = "account"  #regular account
     INVESTMENT = "investment"
     CARD = "card"

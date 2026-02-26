@@ -4,10 +4,14 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="de06fa91-bc2b-40d6-99b7-d8296e3fd4c9" name="Changes" comment="added signals.py : transactions can change its account balance">
+    <list default="true" id="de06fa91-bc2b-40d6-99b7-d8296e3fd4c9" name="Changes" comment="fixed a bug">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/my_finance/Accounts/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/my_finance/Accounts/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/my_finance/Accounts/tests.py" beforeDir="false" afterPath="$PROJECT_DIR$/my_finance/Accounts/tests.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/my_finance/Accounts/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/my_finance/Accounts/urls.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/my_finance/Accounts/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/my_finance/Accounts/views.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/my_finance/Transactions/url.py" beforeDir="false" afterPath="$PROJECT_DIR$/my_finance/Transactions/url.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/my_finance/Transactions/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/my_finance/Transactions/views.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -60,7 +64,7 @@
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
     &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
     &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.keymap&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;,
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
 }</component>
@@ -109,6 +113,11 @@
       <workItem from="1767514104634" duration="14192000" />
       <workItem from="1767600680629" duration="27328000" />
       <workItem from="1767687674621" duration="12714000" />
+      <workItem from="1767809754507" duration="2422000" />
+      <workItem from="1768052371514" duration="690000" />
+      <workItem from="1769111385744" duration="73000" />
+      <workItem from="1769111480540" duration="5484000" />
+      <workItem from="1772114258495" duration="2553000" />
     </task>
     <task id="LOCAL-00001" summary="refactor file directories">
       <option name="closed" value="true" />
@@ -166,7 +175,15 @@
       <option name="project" value="LOCAL" />
       <updated>1767731250380</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="fixed a bug">
+      <option name="closed" value="true" />
+      <created>1767809872405</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1767809872405</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -180,6 +197,7 @@
     <MESSAGE value="enhanced Account model and view" />
     <MESSAGE value="using JWT for sending Token and User can Log in with password" />
     <MESSAGE value="added signals.py : transactions can change its account balance" />
-    <option name="LAST_COMMIT_MESSAGE" value="added signals.py : transactions can change its account balance" />
+    <MESSAGE value="fixed a bug" />
+    <option name="LAST_COMMIT_MESSAGE" value="fixed a bug" />
   </component>
 </project>
