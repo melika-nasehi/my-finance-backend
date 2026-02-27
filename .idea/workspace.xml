@@ -31,9 +31,6 @@
     &quot;assignee&quot;: &quot;melika-nasehi&quot;
   }
 }</component>
-  <component name="GithubDefaultAccount">
-    <option name="defaultAccountId" value="ff06cb13-0a8c-4916-8bbc-b54549631473" />
-  </component>
   <component name="GithubPullRequestsUISettings">{
   &quot;selectedUrlAndAccountId&quot;: {
     &quot;url&quot;: &quot;https://github.com/melika-nasehi/my-finance-backend.git&quot;,
@@ -61,7 +58,7 @@
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "preferences.pluginManager",
+    "settings.editor.selected.configurable": "org.jetbrains.plugins.github.ui.GithubSettingsConfigurable",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
@@ -116,6 +113,7 @@
       <workItem from="1769111480540" duration="5484000" />
       <workItem from="1772114258495" duration="4255000" />
       <workItem from="1772189416753" duration="846000" />
+      <workItem from="1772190285005" duration="524000" />
     </task>
     <task id="LOCAL-00001" summary="refactor file directories">
       <option name="closed" value="true" />
@@ -253,7 +251,31 @@
       <option name="project" value="LOCAL" />
       <updated>1772189833754</updated>
     </task>
-    <option name="localTasksCounter" value="18" />
+    <task id="LOCAL-00018" summary="startapp Plans">
+      <option name="closed" value="true" />
+      <created>1772190307313</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1772190307314</updated>
+    </task>
+    <task id="LOCAL-00019" summary="startapp Plans">
+      <option name="closed" value="true" />
+      <created>1772190331751</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1772190331751</updated>
+    </task>
+    <task id="LOCAL-00020" summary="startapp Plans">
+      <option name="closed" value="true" />
+      <created>1772190530503</created>
+      <option name="number" value="00020" />
+      <option name="presentableId" value="LOCAL-00020" />
+      <option name="project" value="LOCAL" />
+      <updated>1772190530503</updated>
+    </task>
+    <option name="localTasksCounter" value="21" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
