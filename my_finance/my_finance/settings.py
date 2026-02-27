@@ -43,7 +43,7 @@ INSTALLED_APPS = [
     'Accounts',
     'Category',
     'Budget',
-
+    'plans',
 ]
 
 MIDDLEWARE = [

@@ -10,8 +10,9 @@ from django.shortcuts import get_object_or_404
 
 class AccountListView(APIView):
     def get(self, request):
-        accounts = Account.objects.filter(owner=request.user).values('id', 'name', 'is_debt')
-        return Response(list(accounts))
+        accounts = Account.objects.filter(owner=request.user)
+        serializer = AccountSerializer(accounts, many=True)
+        return Response(serializer.data)
 
     def post(self, request):
         data = request.data
